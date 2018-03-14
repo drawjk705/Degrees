@@ -65,8 +65,6 @@ def get_actor_filmography(actor_id):
 
     filmog = response.get("cast")
 
-    pprint(response)
-
     films = {}
 
     for film in filmog:
@@ -83,8 +81,6 @@ def get_cast(film_id):
         response = requests.get(endpoint + "movie/" + str(film_id) + "/credits?" + key).json()
 
     cast = response.get("cast")
-    if cast is None:
-        pprint(response)
 
     actors = {}
 
@@ -113,7 +109,6 @@ def get_costars(actor1):
     id1 = get_id_from_name(actor1)
 
     filmog = get_actor_filmography(id1)
-    pprint(filmog)
 
     costars = []
 
@@ -128,13 +123,40 @@ def get_costars(actor1):
                 id_to_name.update(cast)
             if str(id1) != str(actor):
                 costars.append(({actor: cast.get(actor)}, filmog.get(film)))
-    pprint(costars)
     actors_to_costars.update({id1: costars})
+    return costars
 
+
+def check_connection(actor1, actor2, path=[]):
+
+    path.append(actor1)
+
+    print(path)
+    if actor1 == actor2:
+        print("woo")
+    if len(path) == 6:
+        return
+
+    id2 = get_id_from_name(actor2)
+
+    costars = get_costars(actor1)
+    for costar in costars:
+        for key in costar[0]:
+            actor = costar[0].get(key)
+            if actor not in path:
+                check_connection(actor, actor2, path)
+
+
+
+
+
+def write_out():
     with open("actors.txt", "w") as outfile:
         json.dump(actors_to_costars, outfile)
 
+#
+# check_if_ready()
+# # get_actor_filmography(get_id_from_name("Brad Pitt"))
+# get_costars("Brad Pitt")
 
-check_if_ready()
-# get_actor_filmography(get_id_from_name("Brad Pitt"))
-get_costars("Brad Pitt")
+check_connection("Brad Pitt", "Margot Robbie")
