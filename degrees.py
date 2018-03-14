@@ -13,6 +13,7 @@ from pprint import pprint
 
 key = "api_key=665e86f05c67c2031783a1a12386ece4"
 endpoint = "https://api.themoviedb.org/3/"
+status = "status_message"
 
 def check_if_ready():
     """
@@ -45,9 +46,10 @@ def get_id_from_name(name):
 
     query = ul.quote(name)
 
-    print(query)
-
     response = requests.get(endpoint + "search/person?" + key + "&language=en-US&query=" + query).json()
+    if status in response:
+        check_if_ready()
+        response = requests.get(endpoint + "search/person?" + key + "&language=en-US&query=" + query).json()
 
     id = response.get("results")[0].get("id")
 
@@ -57,23 +59,32 @@ def get_id_from_name(name):
 def get_actor_filmography(actor_id):
 
     response = requests.get(endpoint + "person/" + str(actor_id) + "/movie_credits?" + key).json()
+    if status in response:
+        check_if_ready()
+        response = requests.get(endpoint + "person/" + str(actor_id) + "/movie_credits?" + key).json()
 
     filmog = response.get("cast")
+
+    pprint(response)
 
     films = {}
 
     for film in filmog:
         films.update({film.get("id"): film.get("title")})
 
-    pprint(films)
+    return films
 
-# 50463
 
 def get_cast(film_id):
 
     response = requests.get(endpoint + "movie/" + str(film_id) + "/credits?" + key).json()
+    if status in response:
+        check_if_ready()
+        response = requests.get(endpoint + "movie/" + str(film_id) + "/credits?" + key).json()
 
     cast = response.get("cast")
+    if cast is None:
+        pprint(response)
 
     actors = {}
 
@@ -83,7 +94,7 @@ def get_cast(film_id):
             actor_id = member.get("id")
             actors.update({actor_id: actor_name})
 
-    pprint(actors)
+    return actors
 
 
 # map from actor's ID to his/her name
@@ -100,10 +111,30 @@ actors_to_costars = {}
 def get_costars(actor1):
 
     id1 = get_id_from_name(actor1)
-    # test comment....
 
-    pass
+    filmog = get_actor_filmography(id1)
+    pprint(filmog)
+
+    costars = []
+
+    for film in filmog:
+        # get cast of films
+        cast = get_cast(film)
+
+        # go through each actor in the cast
+        for actor in cast:
+            # add to overall dict if need to
+            if actor not in id_to_name:
+                id_to_name.update(cast)
+            if str(id1) != str(actor):
+                costars.append(({actor: cast.get(actor)}, filmog.get(film)))
+    pprint(costars)
+    actors_to_costars.update({id1: costars})
+
+    with open("actors.txt", "w") as outfile:
+        json.dump(actors_to_costars, outfile)
+
 
 check_if_ready()
 # get_actor_filmography(get_id_from_name("Brad Pitt"))
-get_cast(60308)
+get_costars("Brad Pitt")
