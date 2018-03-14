@@ -135,7 +135,7 @@ def check_connection(actor1, actor2, path=[]):
     if actor1 == actor2:
         print("woo")
     if len(path) == 6:
-        return
+        return 0
 
     id2 = get_id_from_name(actor2)
 
