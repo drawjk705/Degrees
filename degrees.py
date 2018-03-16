@@ -4,7 +4,6 @@ Written by Joel Krim
 This project uses The Movie Database (TMDb) REST API
 Documentation: https://developers.themoviedb.org/3/getting-started/introduction
 """
-from webbrowser import get
 
 import requests
 import urllib.parse as ul
@@ -101,8 +100,6 @@ def get_cast(film_id):
 
 
 def get_costars(actor_id):
-
-    # id1 = get_id_from_name(actor1)
 
     filmog = get_actor_filmography(actor_id)
 
