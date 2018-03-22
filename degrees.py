@@ -54,9 +54,11 @@ def get_id_from_name(name):
         check_if_ready()
         response = requests.get(endpoint + "search/person?" + key + "&language=en-US&query=" + query).json()
 
-    id = response.get("results")[0].get("id")
-
-    return id
+    try:
+        return response.get("results")[0].get("id")
+    except:
+        print("ERROR: The following name was either misspelled, or does not exist: ", name)
+        exit()
 
 
 def get_actor_filmography(actor_id):
@@ -85,6 +87,9 @@ def get_cast(film_id):
 
     cast = response.get("cast")
 
+    if cast is None:
+        print("gotcha")
+
     actors = {}
 
     for member in cast:
@@ -92,6 +97,15 @@ def get_cast(film_id):
             actor_name = member.get("name")
             actor_id = member.get("id")
             actors.update({actor_id: actor_name})
+
+    id_to_name = {}
+    try:
+        id_to_name = extract_json_from_file(id_to_actor)
+    except:
+        pass
+
+    id_to_name.update(actors)
+    write_out(id_to_name, id_to_actor)
 
     return actors
 
@@ -105,24 +119,13 @@ def get_costars(actor_id):
 
     costars = {}
 
-    id_to_name = {}
-    try:
-        id_to_name = extract_json_from_file(id_to_actor)
-    except:
-        pass
-
     for film in filmog:
         # get cast of films
         cast = get_cast(film)
-
         # go through each actor in the cast
         for actor in cast:
-            # add to overall dict if need to
-            if actor not in id_to_name:
-                id_to_name.update(cast)
             if str(actor_id) != str(actor):
-                costars.update({actor: cast.get(actor)})
-                id_to_name.update({actor: cast.get(actor)})
+                costars.update({actor: filmog.get(film)})
     data = {}
     try:
         data = extract_json_from_file(cocast)
@@ -130,44 +133,14 @@ def get_costars(actor_id):
         pass
     data.update({actor_id: costars})
     write_out(data, cocast)
-    write_out(id_to_name, id_to_actor)
     return costars
 
 
-# add functionality to see the movies the 2 were in together
-def check_connection(actor1, actor2, pass_num=0, path=[]):
-
-    path.append(actor1)
-
-    data = {}
-    try:
-        data = extract_json_from_file(cocast)
-    except:
-        pass
-    # pprint(data)
-
-    id1 = get_id_from_name(actor1)
-    id2 = get_id_from_name(actor2)
-    pprint(id2)
-
-    costars = {}
-    if str(id1) in data:
-        costars = data.get(str(id1))
-        pprint(costars)
-    else:
-        costars = get_costars(id1)
-    if str(id2) in costars:
-        path.append(actor2)
-        print("HOORAY: ", path)
+def target_in_costars(costars, target):
+    if target in costars:
         return True
-
-    for i in range(6 - pass_num):
-        for costar in costars:
-            if costars.get(costar) not in path:
-                if check_connection(costars.get(costar), actor2, pass_num + 1, deepcopy(path)) is True:
-                    return True
-
-
+    else:
+        return False
 
 
 def extract_json_from_file(filename):
@@ -181,4 +154,4 @@ def write_out(data, filename):
 ###############################################################
 ###############################################################
 
-check_connection("Margot Robbie", "Joel Edgerton")
+# get_costars("62")
